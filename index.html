@@ -2,30 +2,31 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>마장 진로 포트폴리오 제출</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- React & ReactDOM -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <!-- html2pdf for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <!-- Lucide Icons -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Professional Font (Pretendard) -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        :root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
-        html { scroll-padding-top: env(safe-area-inset-top, 0px); }
         body {
-            font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            font-family: 'Pretendard', sans-serif;
             background-color: #f8fafc; /* slate-50 */
             color: #0f172a; /* slate-900 */
         }
@@ -44,33 +45,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-
-        /* 3D 책장 넘기기 애니메이션 개선 */
-        @keyframes pageTurn {
-            0% {
-                transform: perspective(2000px) rotateY(0deg);
-                transform-origin: left center;
-                opacity: 1;
-                filter: brightness(1);
-            }
-            50% {
-                transform: perspective(2000px) rotateY(-90deg) scale(0.96);
-                transform-origin: left center;
-                opacity: 0.6;
-                filter: brightness(0.8);
-            }
-            100% {
-                transform: perspective(2000px) rotateY(0deg) scale(1);
-                transform-origin: left center;
-                opacity: 1;
-                filter: brightness(1);
-            }
-        }
-        .animate-page-turn {
-            animation: pageTurn 0.65s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
-            backface-visibility: hidden;
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         /* PDF 미리보기를 위한 스케일링 래퍼 */
@@ -96,636 +71,1026 @@
 <body>
     <div id="root"></div>
 
-    <script>
-(function(){
-"use strict";
-const { useState, useEffect, useRef } = React;
-// Firebase Mock Variables
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'majang-portfolio-app';
-// 화면 안 알림 (배포 환경에서는 브라우저 alert 창이 뜨지 않음)
-const showToast = (msg) => {
-    const el = document.createElement('div');
-    el.textContent = msg;
-    el.style.cssText = 'position:fixed;left:50%;bottom:calc(32px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:#0f172a;color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;font-size:15px;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:90vw;text-align:center;';
-    document.body.appendChild(el);
-    setTimeout(() => { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; }, 2500);
-    setTimeout(() => el.remove(), 2900);
-};
-// --- Modals ---
-// 선생님 비밀번호 모달
-const PasswordModal = ({ isOpen, onClose, onSuccess }) => {
-    const [pwd, setPwd] = useState('');
-    const [error, setError] = useState(false);
-    if (!isOpen)
-        return null;
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (pwd === '1234') {
-            setPwd('');
-            setError(false);
-            onSuccess();
-            onClose();
-        }
-        else {
-            setError(true);
-            setPwd('');
-        }
-    };
-    return (React.createElement("div", { className: "fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" },
-        React.createElement("div", { className: "bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 animate-fade-in" },
-            React.createElement("div", { className: "text-center mb-6" },
-                React.createElement("div", { className: "w-12 h-12 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto mb-3" },
-                    React.createElement("i", { "data-lucide": "lock", className: "w-6 h-6" })),
-                React.createElement("h3", { className: "text-xl font-bold text-slate-900" }, "\uAD50\uC0AC \uC778\uC99D"),
-                React.createElement("p", { className: "text-slate-500 text-sm mt-1" }, "\uC811\uADFC \uBE44\uBC00\uBC88\uD638\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694.")),
-            React.createElement("form", { onSubmit: handleSubmit },
-                React.createElement("input", { type: "password", value: pwd, onChange: (e) => setPwd(e.target.value), className: "w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none text-center text-xl tracking-widest transition-all mb-2", placeholder: "****", autoFocus: true }),
-                error && React.createElement("p", { className: "text-red-500 text-sm text-center mb-4" }, "\uBE44\uBC00\uBC88\uD638\uAC00 \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."),
-                React.createElement("div", { className: "flex gap-2 mt-6" },
-                    React.createElement("button", { type: "button", onClick: onClose, className: "flex-1 py-3 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors" }, "\uCDE8\uC18C"),
-                    React.createElement("button", { type: "submit", className: "flex-1 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors" }, "\uD655\uC778"))))));
-};
-// 제출 확인 모달
-const ConfirmModal = ({ isOpen, message, onConfirm, onCancel, title = '최종 제출 확인', confirmText = '제출하기', cancelText = '수정하기', icon = 'send' }) => {
-    if (!isOpen)
-        return null;
-    return (React.createElement("div", { className: "fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" },
-        React.createElement("div", { className: "bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 animate-fade-in text-center" },
-            React.createElement("div", { className: "w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4" },
-                React.createElement("i", { "data-lucide": icon, className: `w-6 h-6 ${icon === 'send' ? 'ml-1' : ''}` })),
-            React.createElement("h3", { className: "text-xl font-bold text-slate-900 mb-2" }, title),
-            React.createElement("p", { className: "text-slate-600 text-sm mb-8 font-medium" }, message),
-            React.createElement("div", { className: "flex gap-3 w-full" },
-                React.createElement("button", { onClick: onCancel, className: "flex-1 py-3 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors" }, cancelText),
-                React.createElement("button", { onClick: onConfirm, className: "flex-1 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors" }, confirmText)))));
-};
-// 회사 선택 모달
-const CompanyConfirmModal = ({ isOpen, company, onConfirm, onCancel }) => {
-    if (!isOpen || !company)
-        return null;
-    return (React.createElement("div", { className: "fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" },
-        React.createElement("div", { className: "bg-white rounded-2xl shadow-xl max-w-md w-full p-8 animate-fade-in text-center" },
-            React.createElement("div", { className: `w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${company.color}` },
-                React.createElement("i", { "data-lucide": company.icon, className: "w-8 h-8" })),
-            React.createElement("h3", { className: "text-2xl font-bold text-slate-900 mb-2" }, company.name),
-            React.createElement("p", { className: "text-slate-600 text-md mb-8 font-medium" },
-                "\uC774 \uD68C\uC0AC\uC5D0 \uC9C4\uB85C \uD3EC\uD2B8\uD3F4\uB9AC\uC624(\uC785\uC0AC \uC9C0\uC6D0\uC11C)\uB97C",
-                React.createElement("br", null),
-                "\uC791\uC131\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"),
-            React.createElement("div", { className: "flex gap-3 w-full" },
-                React.createElement("button", { onClick: onCancel, className: "flex-1 py-3 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors" }, "\uB2E4\uB978 \uD68C\uC0AC \uBCF4\uAE30"),
-                React.createElement("button", { onClick: () => onConfirm(company), className: "flex-1 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors" }, "\uC791\uC131 \uC2DC\uC791\uD558\uAE30")))));
-};
-const companies = [
-    { id: 'it', name: 'IT 혁신 기업', icon: 'cpu', desc: '소프트웨어, AI, 데이터 분석', color: 'bg-blue-100 text-blue-600', border: 'hover:border-blue-500' },
-    { id: 'art', name: '디자인 스튜디오', icon: 'pen-tool', desc: '미술, 시각디자인, 콘텐츠 창작', color: 'bg-purple-100 text-purple-600', border: 'hover:border-purple-500' },
-    { id: 'health', name: '스마트 종합 병원', icon: 'stethoscope', desc: '의료, 보건, 생명과학', color: 'bg-emerald-100 text-emerald-600', border: 'hover:border-emerald-500' },
-    { id: 'biz', name: '글로벌 스타트업', icon: 'rocket', desc: '경영, 기획, 마케팅, 창업', color: 'bg-orange-100 text-orange-600', border: 'hover:border-orange-500' },
-    { id: 'edu', name: '공공 교육 기관', icon: 'landmark', desc: '교육, 행정, 사회복지', color: 'bg-indigo-100 text-indigo-600', border: 'hover:border-indigo-500' },
-    { id: 'free', name: '프리랜서 그룹', icon: 'laptop', desc: '자유 전공, 새로운 직업 탐색', color: 'bg-slate-100 text-slate-600', border: 'hover:border-slate-500' },
-];
-const CompanySelection = ({ onSelect }) => {
-    const [selectedForConfirm, setSelectedForConfirm] = useState(null);
-    useEffect(() => {
-        lucide.createIcons();
-    }, []);
-    return (React.createElement("div", { className: "max-w-5xl mx-auto w-full pt-12 pb-20 px-4" },
-        React.createElement("div", { className: "text-center mb-16 animate-fade-in" },
-            React.createElement("span", { className: "inline-block py-1 px-3 rounded-full bg-slate-100 text-slate-600 text-sm font-bold tracking-wider mb-4" }, "STEP 1"),
-            React.createElement("h2", { className: "text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight" }, "\uC9C0\uC6D0\uD560 \uD68C\uC0AC\uB97C \uC120\uD0DD\uD574\uC8FC\uC138\uC694"),
-            React.createElement("p", { className: "text-slate-500 text-lg" }, "\uC5EC\uB7EC\uBD84\uC758 \uAFC8\uC774 \uD604\uC2E4\uC774 \uB420 \uCCAB \uBC88\uC9F8 \uC9C1\uC7A5\uC744 \uACE8\uB77C\uBCF4\uC138\uC694.")),
-        React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" }, companies.map((company) => (React.createElement("button", { key: company.id, onClick: () => setSelectedForConfirm(company), className: `group bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl border-2 border-slate-100 transition-all duration-300 text-left flex flex-col items-start animate-fade-in ${company.border}` },
-            React.createElement("div", { className: `w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110 ${company.color}` },
-                React.createElement("i", { "data-lucide": company.icon, className: "w-7 h-7" })),
-            React.createElement("h3", { className: "text-xl font-bold text-slate-900 mb-2" }, company.name),
-            React.createElement("p", { className: "text-slate-500 text-sm leading-relaxed" }, company.desc))))),
-        React.createElement(CompanyConfirmModal, { isOpen: !!selectedForConfirm, company: selectedForConfirm, onCancel: () => setSelectedForConfirm(null), onConfirm: (comp) => {
-                setSelectedForConfirm(null);
-                onSelect(comp);
-            } })));
-};
-const Header = ({ isTeacherMode, setIsTeacherMode }) => {
-    const [showPwdModal, setShowPwdModal] = useState(false);
-    return (React.createElement("header", { className: "bg-white border-b border-slate-200 sticky top-0 z-50" },
-        React.createElement("div", { className: "max-w-7xl mx-auto px-4 h-16 flex items-center justify-between" },
-            React.createElement("div", { className: "flex items-center gap-3" },
-                React.createElement("div", { className: "w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center" },
-                    React.createElement("i", { "data-lucide": "briefcase", className: "w-4 h-4 text-white" })),
-                React.createElement("h1", { className: "text-lg font-bold text-slate-900 tracking-tight" }, "\uB9C8\uC7A5 \uC9C4\uB85C \uD3EC\uD2B8\uD3F4\uB9AC\uC624")),
-            React.createElement("button", { onClick: () => isTeacherMode ? setIsTeacherMode(false) : setShowPwdModal(true), className: `px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${isTeacherMode
-                    ? 'bg-slate-900 text-white hover:bg-slate-800'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}` },
-                React.createElement("i", { "data-lucide": isTeacherMode ? "log-out" : "shield", className: "w-4 h-4" }),
-                isTeacherMode ? '학생 화면으로' : '선생님 용')),
-        React.createElement(PasswordModal, { isOpen: showPwdModal, onClose: () => setShowPwdModal(false), onSuccess: () => setIsTeacherMode(true) })));
-};
-const TeacherDashboard = () => {
-    return (React.createElement("div", { className: "max-w-6xl mx-auto p-8 animate-fade-in" },
-        React.createElement("div", { className: "flex items-center gap-3 mb-8" },
-            React.createElement("div", { className: "w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center" },
-                React.createElement("i", { "data-lucide": "users", className: "w-5 h-5" })),
-            React.createElement("h2", { className: "text-2xl font-bold text-slate-900" }, "\uC81C\uCD9C\uB41C \uD3EC\uD2B8\uD3F4\uB9AC\uC624 \uAD00\uB9AC")),
-        React.createElement("div", { className: "bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center text-slate-500" },
-            React.createElement("i", { "data-lucide": "inbox", className: "w-16 h-16 mx-auto mb-4 text-slate-300" }),
-            React.createElement("p", { className: "text-lg" },
-                "\uD604\uC7AC \uC5F0\uACB0\uB41C \uB370\uC774\uD130\uBCA0\uC774\uC2A4\uAC00 \uC5C6\uC5B4 \uC784\uC2DC \uB300\uC2DC\uBCF4\uB4DC\uB9CC \uD45C\uC2DC\uB429\uB2C8\uB2E4.",
-                React.createElement("br", null),
-                "(\uC2E4\uC81C \uC5F0\uB3D9 \uC2DC \uD559\uC0DD\uB4E4\uC758 \uC9C0\uC6D0\uC11C \uBAA9\uB85D\uC774 \uC774\uACF3\uC5D0 \uB098\uD0C0\uB0A9\uB2C8\uB2E4.)"))));
-};
-const App = () => {
-    const [isTeacherMode, setIsTeacherMode] = useState(false);
-    const [selectedCompany, setSelectedCompany] = useState(null);
-    // Form state
-    const [name, setName] = useState('');
-    const [jobTitle, setJobTitle] = useState('');
-    const [imagePreview, setImagePreview] = useState(null);
-    const [q1, setQ1] = useState('');
-    const [q2, setQ2] = useState('');
-    const [q3, setQ3] = useState('');
-    const [q4, setQ4] = useState('');
-    const [q5, setQ5] = useState('');
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [showHomeConfirm, setShowHomeConfirm] = useState(false);
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-    // 태블릿 전시 & TAG 피드백 관련 상태
-    const [shareMode, setShareMode] = useState('none'); // 'none' | 'card' | 'resume' | 'tag_form' | 'results'
-    const [isTurningPage, setIsTurningPage] = useState(false);
-    const [feedbacks, setFeedbacks] = useState([]);
-    // TAG 입력 폼 상태
-    const [evalAuthor, setEvalAuthor] = useState('');
-    const [evalT, setEvalT] = useState(''); // Tell (칭찬)
-    const [evalA, setEvalA] = useState(''); // Ask (질문)
-    const [evalG, setEvalG] = useState(''); // Give (조언)
-    const [evalSuccess, setEvalSuccess] = useState(false);
-    const pdfRef = useRef(null);
-    const previewContainerRef = useRef(null);
-    const [scale, setScale] = useState(0.5);
-    // Re-initialize icons on renders
-    useEffect(() => {
-        lucide.createIcons();
-    }, [isTeacherMode, selectedCompany, isSubmitted, imagePreview, shareMode, feedbacks, evalSuccess]);
-    // Calculate responsive scale for PDF preview
-    useEffect(() => {
-        if (isSubmitted && previewContainerRef.current) {
-            const updateScale = () => {
-                const containerWidth = previewContainerRef.current.offsetWidth - 48; // 여백 제외 실사이즈
-                // PDF 원본 가로 길이 1280px 대비 컨테이너 비율 계산
-                const newScale = Math.min(containerWidth / 1280, 1);
-                setScale(newScale > 0 ? newScale : 0.5);
-            };
-            updateScale();
-            window.addEventListener('resize', updateScale);
-            return () => window.removeEventListener('resize', updateScale);
-        }
-    }, [isSubmitted]);
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => setImagePreview(reader.result);
-            reader.readAsDataURL(file);
-        }
-    };
-    const handleSubmitClick = (e) => {
-        e.preventDefault();
-        if (!name || !jobTitle || !imagePreview || !q1 || !q2 || !q3 || !q4 || !q5) {
-            showToast('모든 항목을 작성하고 명함을 업로드해주세요.');
-            return;
-        }
-        setShowConfirm(true);
-    };
-    const handleConfirmSubmit = () => {
-        setShowConfirm(false);
-        setIsSubmitted(true);
-        window.scrollTo(0, 0);
-    };
-    const handleReset = () => {
-        setShowHomeConfirm(true);
-    };
-    const doReset = () => {
-        {
-            setShowHomeConfirm(false);
-            setIsSubmitted(false);
-            setSelectedCompany(null);
-            setName('');
-            setJobTitle('');
-            setImagePreview(null);
-            setQ1('');
-            setQ2('');
-            setQ3('');
-            setQ4('');
-            setQ5('');
-            setFeedbacks([]);
-            setShareMode('none');
-        }
-    };
-    // 작성 내용의 총 글자 수 계산하여 PDF 레이아웃 스타일 동적 적용
-    const totalTextLength = (q1 + q2 + q3 + q4 + q5).length;
-    // 글자 수에 따른 동적 스타일 레벨 (글이 길어지면 폰트와 여백을 자동으로 줄임)
-    const getTextStyle = () => {
-        if (totalTextLength > 450) {
-            return {
-                padding: 'p-6',
-                headerMb: 'mb-3 pb-2',
-                headerText: 'text-2xl',
-                spaceY: 'space-y-1',
-                itemPb: 'pb-1.5',
-                tagText: 'text-[10px] px-2 py-0.5',
-                qText: 'text-xs',
-                aText: 'text-[11px] leading-tight'
-            };
-        }
-        else if (totalTextLength > 250) {
-            return {
-                padding: 'p-8',
-                headerMb: 'mb-4 pb-3',
-                headerText: 'text-2xl',
-                spaceY: 'space-y-2',
-                itemPb: 'pb-2',
-                tagText: 'text-xs px-2.5 py-0.5',
-                qText: 'text-xs',
-                aText: 'text-xs leading-snug'
-            };
-        }
-        else {
-            return {
-                padding: 'p-12',
-                headerMb: 'mb-8 pb-4',
-                headerText: 'text-3xl',
-                spaceY: 'space-y-3',
-                itemPb: 'pb-4',
-                tagText: 'text-xs px-3 py-1',
-                qText: 'text-md',
-                aText: 'text-md leading-relaxed'
-            };
-        }
-    };
-    const pdfStyle = getTextStyle();
-    // 책장 넘기기 효과와 함께 단계 이동
-    const triggerPageTurn = (nextStage) => {
-        setIsTurningPage(true);
-        setTimeout(() => {
-            setShareMode(nextStage);
-            setIsTurningPage(false);
-        }, 300);
-    };
-    // TAG 피드백 제출
-    const handleTagSubmit = (e) => {
-        e.preventDefault();
-        if (!evalAuthor.trim() || !evalT.trim() || !evalA.trim() || !evalG.trim()) {
-            showToast('모든 평가 항목과 작성자 이름을 작성해주세요!');
-            return;
-        }
-        const newFB = {
-            id: Date.now(),
-            author: evalAuthor,
-            t: evalT,
-            a: evalA,
-            g: evalG,
-            date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-        };
-        setFeedbacks([newFB, ...feedbacks]);
-        setEvalT('');
-        setEvalA('');
-        setEvalG('');
-        setEvalAuthor('');
-        setEvalSuccess(true);
-    };
-    const generatePDF = async () => {
-        if (isGeneratingPDF)
-            return;
-        setIsGeneratingPDF(true);
-        let container = null;
-        try {
-            // PDF 출력 시 CSS transform scale로 인한 좌표/잘림 오차 방지
-            const originalElement = pdfRef.current;
-            const clone = originalElement.cloneNode(true);
-            // 오프스크린 고정 컨테이너 생성 (위치 및 여백 정밀 교정)
-            container = document.createElement('div');
-            container.style.position = 'fixed';
-            container.style.left = '0';
-            container.style.top = '0';
-            container.style.width = '1280px';
-            container.style.height = '720px';
-            container.style.zIndex = '-99999';
-            container.style.overflow = 'hidden';
-            container.style.margin = '0';
-            container.style.padding = '0';
-            container.style.backgroundColor = '#ffffff';
-            clone.style.transform = 'none';
-            clone.style.margin = '0';
-            clone.style.left = '0';
-            clone.style.top = '0';
-            container.appendChild(clone);
-            document.body.appendChild(container);
-            const opt = {
-                margin: 0,
-                filename: `${name}_${jobTitle}_입사지원서.pdf`,
-                image: { type: 'jpeg', quality: 1.0 },
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    scrollX: 0,
-                    scrollY: 0,
-                    x: 0,
-                    y: 0,
-                    width: 1280,
-                    height: 720,
-                    windowWidth: 1280,
-                    windowHeight: 720
-                },
-                // 1280px x 720px를 pt 단위(960pt x 540pt)로 정확히 매핑하여 여백/잘림 제거
-                jsPDF: { unit: 'pt', format: [960, 540], orientation: 'landscape' }
-            };
-            const downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
-            if (downloads) {
-                const blob = await html2pdf().set(opt).from(clone).outputPdf('blob');
-                try {
-                    await downloads.save({ filename: opt.filename, data: blob });
-                }
-                catch (err) {
-                    if (err && err.code !== 'declined')
-                        throw err;
-                }
-            }
-            else {
-                await html2pdf().set(opt).from(clone).save();
-            }
-        }
-        catch (error) {
-            console.error('PDF 생성 중 오류:', error);
-            showToast('PDF 생성 중 오류가 발생했습니다.');
-        }
-        finally {
-            if (container && container.parentNode) {
-                document.body.removeChild(container);
-            }
-            setIsGeneratingPDF(false);
-        }
-    };
-    return (React.createElement("div", { className: "min-h-screen flex flex-col" },
-        React.createElement(Header, { isTeacherMode: isTeacherMode, setIsTeacherMode: setIsTeacherMode }),
-        React.createElement("main", { className: "flex-grow" }, isTeacherMode ? (React.createElement(TeacherDashboard, null)) : !selectedCompany ? (React.createElement(CompanySelection, { onSelect: setSelectedCompany })) : !isSubmitted ? (React.createElement("div", { className: "max-w-5xl mx-auto py-10 px-4 animate-fade-in" },
-            React.createElement("div", { className: "mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4" },
-                React.createElement("div", null,
-                    React.createElement("div", { className: `inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold mb-3 ${selectedCompany.color}` },
-                        React.createElement("i", { "data-lucide": selectedCompany.icon, className: "w-4 h-4" }),
-                        selectedCompany.name,
-                        " \uC9C0\uC6D0"),
-                    React.createElement("h2", { className: "text-3xl font-extrabold text-slate-900 tracking-tight" }, "\uC785\uC0AC \uC9C0\uC6D0\uC11C \uC791\uC131"),
-                    React.createElement("p", { className: "text-slate-500 mt-2" }, "\uBBF8\uB798\uB97C \uD5A5\uD55C \uCCAB \uAC78\uC74C! \uAC01 \uD56D\uBAA9\uC744 \uC9C4\uC194\uD558\uAC8C \uC791\uC131\uD574\uC8FC\uC138\uC694.")),
-                React.createElement("button", { onClick: () => setSelectedCompany(null), className: "text-sm px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-semibold transition-colors" }, "\uD68C\uC0AC \uB2E4\uC2DC \uC120\uD0DD\uD558\uAE30")),
-            React.createElement("form", { onSubmit: handleSubmitClick, className: "space-y-8" },
-                React.createElement("div", { className: "bg-white p-8 rounded-2xl shadow-sm border border-slate-200" },
-                    React.createElement("h3", { className: "text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4" },
-                        React.createElement("i", { "data-lucide": "user", className: "w-5 h-5 text-blue-500" }),
-                        " \uC9C0\uC6D0\uC790 \uAE30\uBCF8 \uC815\uBCF4 \uBC0F \uBA85\uD568"),
-                    React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-8" },
-                        React.createElement("div", { className: "space-y-6" },
-                            React.createElement("div", null,
-                                React.createElement("label", { className: "block text-sm font-bold text-slate-700 mb-2" }, "\uC131\uBA85 (\uC774\uB984)"),
-                                React.createElement("input", { type: "text", value: name, onChange: (e) => setName(e.target.value), className: "w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all", placeholder: "\uC608: \uD64D\uAE38\uB3D9", required: true })),
-                            React.createElement("div", null,
-                                React.createElement("label", { className: "block text-sm font-bold text-slate-700 mb-2" }, "\uD76C\uB9DD \uC9C1\uBB34 (\uC9C4\uB85C)"),
-                                React.createElement("input", { type: "text", value: jobTitle, onChange: (e) => setJobTitle(e.target.value), className: "w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all", placeholder: "\uC608: \uC778\uACF5\uC9C0\uB2A5 \uC5F0\uAD6C\uC6D0", required: true }))),
-                        React.createElement("div", null,
-                            React.createElement("label", { className: "block text-sm font-bold text-slate-700 mb-2" }, "\uB514\uC9C0\uD138 \uBA85\uD568 \uC5C5\uB85C\uB4DC (16:9 \uBE44\uC728)"),
-                            React.createElement("div", { className: "relative w-full aspect-video rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-400 bg-slate-50 flex items-center justify-center overflow-hidden transition-colors group cursor-pointer" },
-                                imagePreview ? (React.createElement("img", { src: imagePreview, alt: "\uBA85\uD568 \uBBF8\uB9AC\uBCF4\uAE30", className: "w-full h-full object-cover" })) : (React.createElement("div", { className: "text-center p-4" },
-                                    React.createElement("div", { className: "w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-3 text-slate-400 group-hover:text-blue-500 transition-colors" },
-                                        React.createElement("i", { "data-lucide": "image-plus", className: "w-6 h-6" })),
-                                    React.createElement("span", { className: "text-sm font-bold text-slate-500 group-hover:text-blue-600" }, "\uD074\uB9AD\uD558\uC5EC \uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC"))),
-                                React.createElement("input", { type: "file", accept: "image/*", onChange: handleImageChange, className: "absolute inset-0 w-full h-full opacity-0 cursor-pointer", required: true }))))),
-                React.createElement("div", { className: "bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-8" },
-                    React.createElement("h3", { className: "text-lg font-bold text-slate-900 mb-2 flex items-center gap-2 border-b border-slate-100 pb-4" },
-                        React.createElement("i", { "data-lucide": "file-text", className: "w-5 h-5 text-blue-500" }),
-                        " \uBBF8\uB798 \uC9C4\uB85C \uD0D0\uAD6C \uC5D0\uC138\uC774"),
-                    [
-                        {
-                            id: 'q1',
-                            title: '1. 2045년, 내가 살아갈 미래 사회는 지금과 어떻게 달라져 있을까요?',
-                            sub: '→ 어떤 과학 기술이나 변화 때문에 그렇게 달라질지 함께 써 보세요.',
-                            state: q1,
-                            setter: setQ1
-                        },
-                        {
-                            id: 'q2',
-                            title: '2. 그런 미래 사회에는 어떤 새로운 문제나 필요가 생길까요?',
-                            sub: '→ 미래 사회의 변화 때문에 사람들이 겪게 될 어려움이나 새롭게 필요해지는 것을 생각해 보세요.',
-                            state: q2,
-                            setter: setQ2
-                        },
-                        {
-                            id: 'q3',
-                            title: '3. 그 문제를 해결하는 데 어떤 과학 기술이 도움을 줄 수 있나요?',
-                            sub: '→ 어떤 기술이 어떻게 도움을 줄 수 있는지 이유와 함께 써 보세요.',
-                            state: q3,
-                            setter: setQ3
-                        },
-                        {
-                            id: 'q4',
-                            title: '4. 2045년의 나는 어떤 직업을 가지고 있나요?',
-                            sub: '→ 그 직업이 지금과 비교하여 어떻게 달라져 있을지도 생각해 보세요.',
-                            state: q4,
-                            setter: setQ4
-                        },
-                        {
-                            id: 'q5',
-                            title: '5. 내가 꿈꾸는 직업에는 어떤 과학적 요소가 숨어있나요?',
-                            sub: '→ 내 직업에서 활용되는 과학 원리, 과학 지식, 과학 기술을 찾아보고, 실제로 어떻게 활용되는지 설명해 보세요.',
-                            state: q5,
-                            setter: setQ5
-                        }
-                    ].map((q) => (React.createElement("div", { key: q.id },
-                        React.createElement("label", { className: "block text-sm font-bold text-slate-800 mb-1" }, q.title),
-                        React.createElement("p", { className: "text-xs text-slate-500 mb-3" }, q.sub),
-                        React.createElement("textarea", { value: q.state, onChange: (e) => q.setter(e.target.value), className: "w-full h-28 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all leading-relaxed text-slate-700", placeholder: "\uC790\uC138\uD788 \uC791\uC131\uD574\uC8FC\uC138\uC694...", required: true }))))),
-                React.createElement("button", { type: "submit", className: "w-full py-5 rounded-xl bg-slate-900 text-white text-lg font-bold hover:bg-slate-800 transition-colors shadow-lg flex items-center justify-center gap-2" },
-                    "\uC785\uC0AC \uC9C0\uC6D0\uC11C \uCD5C\uC885 \uC81C\uCD9C\uD558\uAE30 ",
-                    React.createElement("i", { "data-lucide": "arrow-right", className: "w-5 h-5" }))))) : (React.createElement("div", { className: "max-w-6xl mx-auto py-12 px-4 animate-fade-in flex flex-col items-center" },
-            React.createElement("div", { className: "w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-6" },
-                React.createElement("i", { "data-lucide": "check", className: "w-8 h-8 font-bold" })),
-            React.createElement("h2", { className: "text-3xl font-extrabold text-slate-900 mb-2" }, "\uC9C0\uC6D0\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4!"),
-            React.createElement("p", { className: "text-slate-500 mb-8 text-center" }, "\uBA4B\uC9C4 \uC774\uB825\uC11C\uAC00 \uC644\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC544\uB798 \uBC84\uD2BC\uC744 \uB20C\uB7EC PDF\uB85C \uB2E4\uC6B4\uB85C\uB4DC\uD558\uAC70\uB098 \uD0DC\uBE14\uB9BF\uC73C\uB85C \uACF5\uC720\uD574\uBCF4\uC138\uC694."),
-            React.createElement("div", { className: "flex flex-wrap gap-4 mb-10 w-full justify-center" },
-                React.createElement("button", { onClick: handleReset, className: "px-5 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold hover:bg-slate-50 transition-colors flex items-center gap-2" },
-                    React.createElement("i", { "data-lucide": "home", className: "w-5 h-5" }),
-                    " \uD648\uC73C\uB85C"),
-                React.createElement("button", { onClick: () => triggerPageTurn('card'), className: "px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors shadow-lg flex items-center gap-2" },
-                    React.createElement("i", { "data-lucide": "share-2", className: "w-5 h-5" }),
-                    " \uB0B4 \uC9C4\uB85C \uACF5\uC720\uD558\uAE30"),
-                React.createElement("button", { onClick: () => setShareMode('results'), className: "px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors shadow-lg flex items-center gap-2 relative" },
-                    React.createElement("i", { "data-lucide": "message-square", className: "w-5 h-5" }),
-                    " \uACF5\uC720 \uACB0\uACFC \uD655\uC778\uD558\uAE30",
-                    feedbacks.length > 0 && (React.createElement("span", { className: "absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-black animate-bounce" }, feedbacks.length))),
-                React.createElement("button", { onClick: generatePDF, disabled: isGeneratingPDF, className: `px-6 py-3 rounded-xl bg-slate-900 text-white font-bold transition-colors shadow-lg flex items-center gap-2 ${isGeneratingPDF ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-800'}` },
-                    React.createElement("i", { "data-lucide": isGeneratingPDF ? "loader-2" : "download", className: `w-5 h-5 ${isGeneratingPDF ? 'animate-spin' : ''}` }),
-                    isGeneratingPDF ? '다운로드 중...' : '내 이력서 다운로드')),
-            React.createElement("div", { ref: previewContainerRef, className: "pdf-preview-wrapper w-full relative flex justify-center items-center overflow-hidden" },
-                React.createElement("div", { className: "pdf-scale-container shrink-0", style: { width: `${1280 * scale}px`, height: `${720 * scale}px` } },
-                    React.createElement("div", { ref: pdfRef, id: "pdf-capture-target", className: "w-[1280px] h-[720px] bg-white flex overflow-hidden relative", style: { transform: `scale(${scale})`, transformOrigin: 'top left' } },
-                        React.createElement("div", { className: "w-[45%] h-full bg-slate-900 text-white p-12 flex flex-col justify-between" },
-                            React.createElement("div", null,
-                                React.createElement("div", { className: "inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 text-slate-300 text-sm font-bold tracking-wider mb-6 border border-slate-700" }, selectedCompany === null || selectedCompany === void 0 ? void 0 :
-                                    selectedCompany.name,
-                                    " \uC9C0\uC6D0\uC790"),
-                                React.createElement("h1", { className: "text-5xl font-extrabold mb-3 tracking-tight" }, name),
-                                React.createElement("h2", { className: "text-2xl text-blue-400 font-semibold" }, jobTitle)),
-                            React.createElement("div", { className: "w-full" },
-                                React.createElement("h3", { className: "text-sm font-bold text-slate-400 mb-4 tracking-widest uppercase border-b border-slate-700 pb-2" }, "Business Card"),
-                                React.createElement("div", { className: "w-full aspect-video rounded-xl overflow-hidden bg-slate-800 shadow-xl border-4 border-slate-800" }, imagePreview && React.createElement("img", { src: imagePreview, className: "w-full h-full object-cover", alt: "\uBA85\uD568" }))),
-                            React.createElement("div", { className: "border-t border-slate-700 pt-6" },
-                                React.createElement("p", { className: "text-slate-400 font-bold text-sm tracking-widest uppercase" }, "Science & Career Portfolio"),
-                                React.createElement("p", { className: "text-slate-500 text-xs mt-2" }, "\uBBF8\uB798\uB97C \uC5EC\uB294 \uB9C8\uC7A5 \uC9C4\uB85C \uD504\uB85C\uC81D\uD2B8"))),
-                        React.createElement("div", { className: `w-[55%] h-full ${pdfStyle.padding} bg-white flex flex-col justify-between overflow-hidden` },
-                            React.createElement("div", { className: `border-b-2 border-slate-900 ${pdfStyle.headerMb}` },
-                                React.createElement("h2", { className: `${pdfStyle.headerText} font-black text-slate-900 tracking-tight uppercase` }, "Interview Details")),
-                            React.createElement("div", { className: `flex-grow flex flex-col justify-between ${pdfStyle.spaceY}` }, [
-                                { q: "2045년, 내가 살아갈 미래 사회는 지금과 어떻게 달라져 있을까요?", a: q1, tag: "2045 미래사회" },
-                                { q: "그런 미래 사회에는 어떤 새로운 문제나 필요가 생길까요?", a: q2, tag: "새로운 문제/필요" },
-                                { q: "그 문제를 해결하는 데 어떤 과학 기술이 도움을 줄 수 있나요?", a: q3, tag: "과학기술 해결" },
-                                { q: "2045년의 나는 어떤 직업을 가지고 있나요?", a: q4, tag: "2045 나의 직업" },
-                                { q: "내가 꿈꾸는 직업에는 어떤 과학적 요소가 숨어있나요?", a: q5, tag: "직업 속 과학원리" }
-                            ].map((item, idx) => (React.createElement("div", { key: idx, className: `${pdfStyle.itemPb} border-b border-slate-100 last:border-0 last:pb-0` },
-                                React.createElement("div", { className: "flex items-center gap-2 mb-1" },
-                                    React.createElement("span", { className: `${pdfStyle.tagText} font-bold text-white bg-slate-900 rounded-full whitespace-nowrap shrink-0` }, item.tag),
-                                    React.createElement("h4", { className: `font-bold text-slate-800 ${pdfStyle.qText} truncate` }, item.q)),
-                                React.createElement("p", { className: `text-slate-600 ${pdfStyle.aText} whitespace-pre-wrap pl-1` }, item.a)))))))))))),
-        shareMode === 'card' && (React.createElement("div", { onClick: () => triggerPageTurn('resume'), className: `fixed inset-0 z-[200] bg-slate-950 flex flex-col items-center justify-center p-0 cursor-pointer select-none overflow-hidden ${isTurningPage ? 'animate-page-turn' : ''}` },
-            React.createElement("div", { className: "absolute top-6 left-6 z-10 bg-black/60 backdrop-blur-md px-5 py-2.5 rounded-full text-white text-sm font-semibold flex items-center gap-2 border border-white/10 shadow-lg" },
-                React.createElement("i", { "data-lucide": "touch-pointer", className: "w-4 h-4 animate-pulse text-blue-400" }),
-                " \uD654\uBA74\uC744 \uD130\uCE58\uD558\uC5EC \uC774\uB825\uC11C \uBCF4\uAE30"),
-            React.createElement("div", { className: "w-full h-full flex items-center justify-center bg-slate-900" }, imagePreview ? (React.createElement("img", { src: imagePreview, className: "w-full h-full object-contain", alt: "\uAFC8 \uBA85\uD568" })) : (React.createElement("p", { className: "text-slate-400 text-xl font-bold" }, "\uB4F1\uB85D\uB41C \uBA85\uD568\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."))))),
-        shareMode === 'resume' && (React.createElement("div", { className: `fixed inset-0 z-[200] bg-slate-950 flex flex-col p-0 select-none overflow-y-auto ${isTurningPage ? 'animate-page-turn' : ''}` },
-            React.createElement("div", { className: "sticky top-0 z-10 w-full bg-slate-900/90 backdrop-blur-md py-4 px-6 md:px-8 flex items-center justify-between text-white border-b border-slate-800 shadow-xl shrink-0" },
-                React.createElement("span", { className: "text-base font-bold flex items-center gap-2" },
-                    React.createElement("i", { "data-lucide": "file-text", className: "w-5 h-5 text-blue-400" }),
-                    " \uC9C4\uB85C \uD3EC\uD2B8\uD3F4\uB9AC\uC624 \uC5D0\uC138\uC774"),
-                React.createElement("button", { onClick: () => triggerPageTurn('tag_form'), className: "text-sm md:text-base bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 px-6 py-3 rounded-full font-black flex items-center gap-2 shadow-xl shadow-indigo-500/30 ring-4 ring-indigo-400/30 animate-pulse hover:scale-105 active:scale-95 transition-all cursor-pointer text-white" },
-                    React.createElement("span", null, "\uD53C\uB4DC\uBC31 \uB0A8\uAE30\uB7EC \uAC00\uAE30"),
-                    " ",
-                    React.createElement("i", { "data-lucide": "arrow-right", className: "w-5 h-5" }))),
-            React.createElement("div", { className: "w-full min-h-[calc(100vh-65px)] bg-slate-950 text-slate-100 p-6 md:p-12 flex flex-col items-center justify-start" },
-                React.createElement("div", { className: "max-w-4xl w-full space-y-6 my-auto" },
-                    [
-                        { q: "1. 2045년, 내가 살아갈 미래 사회는 지금과 어떻게 달라져 있을까요?", a: q1, tag: "2045 미래사회", sub: "어떤 과학 기술이나 변화 때문에 그렇게 달라질지 함께 써 보세요." },
-                        { q: "2. 그런 미래 사회에는 어떤 새로운 문제나 필요가 생길까요?", a: q2, tag: "새로운 문제/필요", sub: "미래 사회의 변화 때문에 사람들이 겪게 될 어려움이나 새롭게 필요해지는 것을 생각해 보세요." },
-                        { q: "3. 그 문제를 해결하는 데 어떤 과학 기술이 도움을 줄 수 있나요?", a: q3, tag: "과학기술 해결", sub: "어떤 기술이 어떻게 도움을 줄 수 있는지 이유와 함께 써 보세요." },
-                        { q: "4. 2045년의 나는 어떤 직업을 가지고 있나요?", a: q4, tag: "2045 나의 직업", sub: "그 직업이 지금과 비교하여 어떻게 달라져 있을지도 생각해 보세요." },
-                        { q: "5. 내가 꿈꾸는 직업에는 어떤 과학적 요소가 숨어있나요?", a: q5, tag: "직업 속 과학원리", sub: "내 직업에서 활용되는 과학 원리, 과학 지식, 과학 기술을 찾아보고, 실제로 어떻게 활용되는지 설명해 보세요." }
-                    ].map((item, idx) => (React.createElement("div", { key: idx, className: "bg-slate-900 border border-slate-800 p-6 md:p-7 rounded-2xl shadow-xl" },
-                        React.createElement("div", { className: "flex items-center gap-3 mb-2" },
-                            React.createElement("span", { className: "text-xs font-black text-white bg-blue-600 px-3 py-1 rounded-full whitespace-nowrap" }, item.tag),
-                            React.createElement("h4", { className: "font-bold text-white text-base md:text-lg" }, item.q)),
-                        React.createElement("p", { className: "text-xs text-slate-400 mb-3 pl-1" },
-                            "\u2192 ",
-                            item.sub),
-                        React.createElement("p", { className: "text-slate-300 text-sm md:text-base leading-relaxed whitespace-pre-wrap pl-1" }, item.a)))),
-                    React.createElement("div", { className: "pt-6 pb-8 text-center" },
-                        React.createElement("button", { onClick: () => triggerPageTurn('tag_form'), className: "w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-2xl font-black text-lg text-white shadow-2xl shadow-indigo-500/40 ring-4 ring-indigo-400/30 transition-all hover:scale-105 active:scale-95 inline-flex items-center justify-center gap-3 cursor-pointer" },
-                            React.createElement("i", { "data-lucide": "message-square-plus", className: "w-6 h-6" }),
-                            React.createElement("span", null, "\uD53C\uB4DC\uBC31 \uB0A8\uAE30\uB7EC \uAC00\uAE30 (TAG \uD3C9\uAC00)"),
-                            React.createElement("i", { "data-lucide": "arrow-right", className: "w-6 h-6" }))))))),
-        shareMode === 'tag_form' && (React.createElement("div", { className: `fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-0 overflow-y-auto ${isTurningPage ? 'animate-page-turn' : ''}` },
-            React.createElement("div", { className: "bg-white w-full h-full md:h-auto md:min-h-screen flex flex-col justify-between p-6 md:p-12 relative animate-fade-in" },
-                React.createElement("div", { className: "max-w-4xl mx-auto w-full my-auto" },
-                    React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 pb-6 mb-8" },
-                        React.createElement("div", null,
-                            React.createElement("span", { className: "text-xs font-black text-indigo-600 bg-indigo-50 px-3.5 py-1.5 rounded-full uppercase tracking-wider" }, "TAG Evaluation"),
-                            React.createElement("h3", { className: "text-3xl font-extrabold text-slate-900 mt-2" },
-                                name,
-                                " \uCE5C\uAD6C\uC5D0\uAC8C \uD53C\uB4DC\uBC31 \uB0A8\uAE30\uAE30")),
-                        React.createElement("button", { onClick: () => setShareMode('none'), className: "px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors" }, "\uACF5\uC720 \uC885\uB8CC")),
-                    evalSuccess ? (React.createElement("div", { className: "text-center py-16 animate-fade-in" },
-                        React.createElement("div", { className: "w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6" },
-                            React.createElement("i", { "data-lucide": "check-circle-2", className: "w-12 h-12" })),
-                        React.createElement("h4", { className: "text-3xl font-bold text-slate-900 mb-3" }, "\uD3C9\uAC00\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4!"),
-                        React.createElement("p", { className: "text-slate-500 mb-10 text-base" }, "\uCE5C\uAD6C\uC5D0\uAC8C \uD070 \uB3C4\uC6C0\uC774 \uB420 \uAC70\uC608\uC694. \uACE0\uB9C8\uC6CC\uC694!"),
-                        React.createElement("div", { className: "flex gap-4 justify-center" },
-                            React.createElement("button", { onClick: () => { setEvalSuccess(false); triggerPageTurn('card'); }, className: "px-8 py-4 rounded-2xl bg-indigo-600 text-white text-base font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-lg" },
-                                React.createElement("i", { "data-lucide": "rotate-ccw", className: "w-5 h-5" }),
-                                " \uBA85\uD568 \uBCF4\uAE30 (\uB2E4\uC74C \uCE5C\uAD6C)"),
-                            React.createElement("button", { onClick: () => { setEvalSuccess(false); setShareMode('none'); }, className: "px-8 py-4 rounded-2xl bg-slate-900 text-white text-base font-bold hover:bg-slate-800 transition-colors shadow-lg" }, "\uACF5\uC720 \uC885\uB8CC")))) : (React.createElement("form", { onSubmit: handleTagSubmit, className: "space-y-6" },
-                        React.createElement("div", null,
-                            React.createElement("label", { className: "block text-xs font-bold text-slate-600 uppercase mb-2" }, "\uC791\uC131\uC790 (\uB0B4 \uC774\uB984)"),
-                            React.createElement("input", { type: "text", value: evalAuthor, onChange: (e) => setEvalAuthor(e.target.value), className: "w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-300 focus:border-indigo-500 outline-none text-base font-semibold", placeholder: "\uC608: \uAE40\uBBFC\uC900", required: true })),
-                        React.createElement("div", null,
-                            React.createElement("label", { className: "block text-sm font-bold text-blue-600 uppercase mb-2 flex items-center gap-1.5" },
-                                React.createElement("span", { className: "w-6 h-6 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center font-black text-xs" }, "T"),
-                                " Tell (\uCE6D\uCC2C\uD560 \uC810)"),
-                            React.createElement("input", { type: "text", value: evalT, onChange: (e) => setEvalT(e.target.value), className: "w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-300 focus:border-blue-500 outline-none text-base", placeholder: "\uBA4B\uC9C4 \uC810\uC774\uB098 \uC798 \uC791\uC131\uD55C \uBD80\uBD84\uC744 \uCE6D\uCC2C\uD574\uC8FC\uC138\uC694!", required: true })),
-                        React.createElement("div", null,
-                            React.createElement("label", { className: "block text-sm font-bold text-amber-600 uppercase mb-2 flex items-center gap-1.5" },
-                                React.createElement("span", { className: "w-6 h-6 bg-amber-100 text-amber-600 rounded-full inline-flex items-center justify-center font-black text-xs" }, "A"),
-                                " Ask (\uAD81\uAE08\uD55C \uC810)"),
-                            React.createElement("input", { type: "text", value: evalA, onChange: (e) => setEvalA(e.target.value), className: "w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-300 focus:border-amber-500 outline-none text-base", placeholder: "\uC774 \uC9C4\uB85C\uB098 \uD3EC\uD2B8\uD3F4\uB9AC\uC624 \uB0B4\uC6A9 \uC911 \uAD81\uAE08\uD55C \uC810\uC744 \uBB3C\uC5B4\uBCF4\uC138\uC694!", required: true })),
-                        React.createElement("div", null,
-                            React.createElement("label", { className: "block text-sm font-bold text-emerald-600 uppercase mb-2 flex items-center gap-1.5" },
-                                React.createElement("span", { className: "w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full inline-flex items-center justify-center font-black text-xs" }, "G"),
-                                " Give (\uC54C\uB824\uC8FC\uACE0 \uC2F6\uC740 \uC810 / \uC870\uC5B8)"),
-                            React.createElement("input", { type: "text", value: evalG, onChange: (e) => setEvalG(e.target.value), className: "w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-300 focus:border-emerald-500 outline-none text-base", placeholder: "\uB354 \uBC1C\uC804\uC2DC\uD0AC \uC218 \uC788\uB294 \uC544\uC774\uB514\uC5B4\uB098 \uB3C4\uC6C0\uC774 \uB420 \uC815\uBCF4\uB97C \uACF5\uC720\uD574\uC8FC\uC138\uC694!", required: true })),
-                        React.createElement("div", { className: "flex gap-4 pt-6 border-t border-slate-200" },
-                            React.createElement("button", { type: "button", onClick: () => triggerPageTurn('card'), className: "flex-1 py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 text-base" },
-                                React.createElement("i", { "data-lucide": "arrow-left", className: "w-5 h-5" }),
-                                " \uBA85\uD568 \uBCF4\uAE30"),
-                            React.createElement("button", { type: "submit", className: "flex-1 py-4 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors shadow-xl text-base flex items-center justify-center gap-2" },
-                                React.createElement("i", { "data-lucide": "send", className: "w-5 h-5" }),
-                                " \uD3C9\uAC00 \uB4F1\uB85D\uD558\uAE30")))))))),
-        shareMode === 'results' && (React.createElement("div", { className: "fixed inset-0 z-[200] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4" },
-            React.createElement("div", { className: "bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[85vh] flex flex-col p-8 animate-fade-in border border-slate-100" },
-                React.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-4 mb-6" },
-                    React.createElement("div", { className: "flex items-center gap-3" },
-                        React.createElement("div", { className: "w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center font-bold" },
-                            React.createElement("i", { "data-lucide": "message-square", className: "w-5 h-5" })),
-                        React.createElement("div", null,
-                            React.createElement("h3", { className: "text-xl font-bold text-slate-900" }, "\uCE5C\uAD6C\uB4E4\uC774 \uB0A8\uACA8\uC900 TAG \uD53C\uB4DC\uBC31"),
-                            React.createElement("p", { className: "text-xs text-slate-500" },
-                                "\uCD1D ",
-                                feedbacks.length,
-                                "\uAC1C\uC758 \uC751\uC6D0\uC774 \uB3C4\uCC29\uD588\uC2B5\uB2C8\uB2E4."))),
-                    React.createElement("button", { onClick: () => setShareMode('none'), className: "p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors" },
-                        React.createElement("i", { "data-lucide": "x", className: "w-6 h-6" }))),
-                React.createElement("div", { className: "flex-grow overflow-y-auto space-y-4 pr-1" }, feedbacks.length === 0 ? (React.createElement("div", { className: "text-center py-16 text-slate-400" },
-                    React.createElement("i", { "data-lucide": "inbox", className: "w-12 h-12 mx-auto mb-3 opacity-50" }),
-                    React.createElement("p", { className: "font-semibold text-sm" }, "\uC544\uC9C1 \uB0A8\uACA8\uC9C4 \uD53C\uB4DC\uBC31\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."),
-                    React.createElement("p", { className: "text-xs text-slate-400 mt-1" }, "'\uB0B4 \uC9C4\uB85C \uACF5\uC720\uD558\uAE30'\uB97C \uB20C\uB7EC \uCE5C\uAD6C\uB4E4\uC5D0\uAC8C \uB0B4 \uBA85\uD568\uC744 \uBCF4\uC5EC\uC8FC\uC138\uC694!"))) : (feedbacks.map((fb) => (React.createElement("div", { key: fb.id, className: "p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3" },
-                    React.createElement("div", { className: "flex justify-between items-center border-b border-slate-200/60 pb-2" },
-                        React.createElement("span", { className: "font-bold text-slate-900 text-sm flex items-center gap-1.5" },
-                            React.createElement("i", { "data-lucide": "user", className: "w-4 h-4 text-indigo-500" }),
-                            " ",
-                            fb.author,
-                            " \uCE5C\uAD6C"),
-                        React.createElement("span", { className: "text-xs text-slate-400" }, fb.date)),
-                    React.createElement("div", { className: "space-y-2 text-sm" },
-                        React.createElement("div", { className: "flex gap-2 items-start" },
-                            React.createElement("span", { className: "px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-black shrink-0 mt-0.5" }, "T"),
-                            React.createElement("p", { className: "text-slate-700" },
-                                React.createElement("span", { className: "font-semibold text-blue-900" }, "\uCE6D\uCC2C:"),
-                                " ",
-                                fb.t)),
-                        React.createElement("div", { className: "flex gap-2 items-start" },
-                            React.createElement("span", { className: "px-2 py-0.5 rounded bg-amber-100 text-amber-700 text-xs font-black shrink-0 mt-0.5" }, "A"),
-                            React.createElement("p", { className: "text-slate-700" },
-                                React.createElement("span", { className: "font-semibold text-amber-900" }, "\uC9C8\uBB38:"),
-                                " ",
-                                fb.a)),
-                        React.createElement("div", { className: "flex gap-2 items-start" },
-                            React.createElement("span", { className: "px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-xs font-black shrink-0 mt-0.5" }, "G"),
-                            React.createElement("p", { className: "text-slate-700" },
-                                React.createElement("span", { className: "font-semibold text-emerald-900" }, "\uC870\uC5B8:"),
-                                " ",
-                                fb.g)))))))),
-                React.createElement("div", { className: "mt-6 pt-4 border-t border-slate-100 text-right" },
-                    React.createElement("button", { onClick: () => setShareMode('none'), className: "px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-colors" }, "\uB2EB\uAE30"))))),
-        React.createElement(ConfirmModal, { isOpen: showHomeConfirm, title: "\uD648\uC73C\uB85C \uB3CC\uC544\uAC00\uAE30", message: "\uC791\uC131\uD55C \uB0B4\uC6A9\uC740 \uBAA8\uB450 \uC0AD\uC81C\uB429\uB2C8\uB2E4. PDF\uB97C \uC544\uC9C1 \uBC1B\uC9C0 \uC54A\uC558\uB2E4\uBA74 \uBA3C\uC800 \uB2E4\uC6B4\uB85C\uB4DC\uD574 \uC8FC\uC138\uC694. \uD648\uC73C\uB85C \uB3CC\uC544\uAC00\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?", confirmText: "\uD648\uC73C\uB85C", cancelText: "\uCDE8\uC18C", icon: "home", onConfirm: doReset, onCancel: () => setShowHomeConfirm(false) }),
-        React.createElement(ConfirmModal, { isOpen: showConfirm, message: "\uC81C\uCD9C \uBC84\uD2BC\uC744 \uB204\uB974\uBA74 \uC218\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uC81C\uCD9C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?", onConfirm: handleConfirmSubmit, onCancel: () => setShowConfirm(false) })));
-};
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(App, null));
+    <!-- Firebase Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-})();
-</script>
+        window.firebaseModules = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
+            getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp
+        };
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Firebase Mock Variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'majang-portfolio-app';
+        
+        // --- Modals ---
+        
+        // 선생님 비밀번호 모달
+        const PasswordModal = ({ isOpen, onClose, onSuccess }) => {
+            const [pwd, setPwd] = useState('');
+            const [error, setError] = useState(false);
+
+            if (!isOpen) return null;
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (pwd === '1234') {
+                    setPwd(''); setError(false); onSuccess(); onClose();
+                } else {
+                    setError(true); setPwd('');
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 animate-fade-in">
+                        <div className="text-center mb-6">
+                            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto mb-3">
+                                <i data-lucide="lock" className="w-6 h-6"></i>
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900">교사 인증</h3>
+                            <p className="text-slate-500 text-sm mt-1">접근 비밀번호를 입력해주세요.</p>
+                        </div>
+                        <form onSubmit={handleSubmit}>
+                            <input 
+                                type="password" value={pwd} onChange={(e) => setPwd(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none text-center text-xl tracking-widest transition-all mb-2"
+                                placeholder="****" autoFocus
+                            />
+                            {error && <p className="text-red-500 text-sm text-center mb-4">비밀번호가 일치하지 않습니다.</p>}
+                            <div className="flex gap-2 mt-6">
+                                <button type="button" onClick={onClose} className="flex-1 py-3 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors">취소</button>
+                                <button type="submit" className="flex-1 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors">확인</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // 제출 확인 모달
+        const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 animate-fade-in text-center">
+                        <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="send" className="w-6 h-6 ml-1"></i>
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">최종 제출 확인</h3>
+                        <p className="text-slate-600 text-sm mb-8 font-medium">{message}</p>
+                        <div className="flex gap-3 w-full">
+                            <button onClick={onCancel} className="flex-1 py-3 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors">수정하기</button>
+                            <button onClick={onConfirm} className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">제출하기</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 홈으로 이동(초기화) 확인 모달
+        const ResetConfirmModal = ({ isOpen, onConfirm, onCancel }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 animate-fade-in text-center">
+                        <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="home" className="w-6 h-6"></i>
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">첫 화면으로 이동</h3>
+                        <p className="text-slate-600 text-sm mb-6 font-medium">작성된 모든 내용이 초기화되고<br/>첫 화면(회사 선택)으로 이동합니다.</p>
+                        <div className="flex gap-3 w-full">
+                            <button onClick={onCancel} className="flex-1 py-3 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors">취소</button>
+                            <button onClick={onConfirm} className="flex-1 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors">확인</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 알림 모달
+        const AlertModal = ({ isOpen, message, onClose }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-fade-in text-center">
+                        <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="alert-circle" className="w-6 h-6"></i>
+                        </div>
+                        <p className="text-slate-800 text-sm mb-6 font-semibold whitespace-pre-wrap">{message}</p>
+                        <button onClick={onClose} className="w-full py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors">확인</button>
+                    </div>
+                </div>
+            );
+        };
+
+        // 회사 선택 모달
+        const CompanyConfirmModal = ({ isOpen, company, onConfirm, onCancel }) => {
+            if (!isOpen || !company) return null;
+
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [isOpen, company]);
+
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 animate-fade-in text-center">
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${company.color}`}>
+                            <i data-lucide={company.icon} className="w-8 h-8"></i>
+                        </div>
+                        <h3 className="text-2xl font-bold text-slate-900 mb-2">{company.name}</h3>
+                        <p className="text-slate-600 text-md mb-8 font-medium">이 회사에 진로 포트폴리오(입사 지원서)를<br/>작성하시겠습니까?</p>
+                        <div className="flex gap-3 w-full">
+                            <button onClick={onCancel} className="flex-1 py-3 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors">다른 회사 보기</button>
+                            <button onClick={() => onConfirm(company)} className="flex-1 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors">작성 시작하기</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const companies = [
+            { id: 'it', name: 'IT 혁신 기업', icon: 'cpu', desc: '소프트웨어, AI, 데이터 분석', color: 'bg-blue-100 text-blue-600', border: 'hover:border-blue-500' },
+            { id: 'art', name: '디자인 스튜디오', icon: 'pen-tool', desc: '미술, 시각디자인, 콘텐츠 창작', color: 'bg-purple-100 text-purple-600', border: 'hover:border-purple-500' },
+            { id: 'health', name: '스마트 종합 병원', icon: 'stethoscope', desc: '의료, 보건, 생명과학', color: 'bg-emerald-100 text-emerald-600', border: 'hover:border-emerald-500' },
+            { id: 'biz', name: '글로벌 스타트업', icon: 'rocket', desc: '경영, 기획, 마케팅, 창업', color: 'bg-orange-100 text-orange-600', border: 'hover:border-orange-500' },
+            { id: 'edu', name: '공공 교육 기관', icon: 'landmark', desc: '교육, 행정, 사회복지', color: 'bg-indigo-100 text-indigo-600', border: 'hover:border-indigo-500' },
+            { id: 'free', name: '프리랜서 그룹', icon: 'laptop', desc: '자유 전공, 새로운 직업 탐색', color: 'bg-slate-100 text-slate-600', border: 'hover:border-slate-500' },
+        ];
+
+        const CompanySelection = ({ onSelect }) => {
+            const [selectedForConfirm, setSelectedForConfirm] = useState(null);
+
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, []);
+
+            return (
+                <div className="max-w-5xl mx-auto w-full pt-12 pb-20 px-4">
+                    <div className="text-center mb-16 animate-fade-in">
+                        <span className="inline-block py-1 px-3 rounded-full bg-slate-100 text-slate-600 text-sm font-bold tracking-wider mb-4">STEP 1</span>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">지원할 회사를 선택해주세요</h2>
+                        <p className="text-slate-500 text-lg">여러분의 꿈이 현실이 될 첫 번째 직장을 골라보세요.</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {companies.map((company) => (
+                            <button 
+                                key={company.id}
+                                onClick={() => setSelectedForConfirm(company)}
+                                className={`group bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl border-2 border-slate-100 transition-all duration-300 text-left flex flex-col items-start animate-fade-in ${company.border}`}
+                            >
+                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110 ${company.color}`}>
+                                    <i data-lucide={company.icon} className="w-7 h-7"></i>
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 mb-2">{company.name}</h3>
+                                <p className="text-slate-500 text-sm leading-relaxed">{company.desc}</p>
+                            </button>
+                        ))}
+                    </div>
+
+                    <CompanyConfirmModal 
+                        isOpen={!!selectedForConfirm}
+                        company={selectedForConfirm}
+                        onCancel={() => setSelectedForConfirm(null)}
+                        onConfirm={(comp) => {
+                            setSelectedForConfirm(null);
+                            onSelect(comp);
+                        }}
+                    />
+                </div>
+            );
+        };
+
+        const Header = ({ isTeacherMode, setIsTeacherMode }) => {
+            const [showPwdModal, setShowPwdModal] = useState(false);
+
+            return (
+                <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+                    <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+                                <i data-lucide="briefcase" className="w-4 h-4 text-white"></i>
+                            </div>
+                            <h1 className="text-lg font-bold text-slate-900 tracking-tight">마장 진로 포트폴리오</h1>
+                        </div>
+                        <button 
+                            onClick={() => isTeacherMode ? setIsTeacherMode(false) : setShowPwdModal(true)}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
+                                isTeacherMode 
+                                ? 'bg-slate-900 text-white hover:bg-slate-800' 
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                        >
+                            <i data-lucide={isTeacherMode ? "log-out" : "shield"} className="w-4 h-4"></i>
+                            {isTeacherMode ? '학생 화면으로' : '선생님 용'}
+                        </button>
+                    </div>
+                    <PasswordModal 
+                        isOpen={showPwdModal} 
+                        onClose={() => setShowPwdModal(false)}
+                        onSuccess={() => setIsTeacherMode(true)}
+                    />
+                </header>
+            );
+        };
+
+        const TeacherDashboard = () => {
+            return (
+                <div className="max-w-6xl mx-auto p-8 animate-fade-in">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                            <i data-lucide="users" className="w-5 h-5"></i>
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-900">제출된 포트폴리오 관리</h2>
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
+                        <i data-lucide="inbox" className="w-16 h-16 mx-auto mb-4 text-slate-300"></i>
+                        <p className="text-lg">현재 연결된 데이터베이스가 없어 임시 대시보드만 표시됩니다.<br/>(실제 연동 시 학생들의 지원서 목록이 이곳에 나타납니다.)</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [isTeacherMode, setIsTeacherMode] = useState(false);
+            const [selectedCompany, setSelectedCompany] = useState(null);
+            
+            // Form state
+            const [name, setName] = useState('');
+            const [jobTitle, setJobTitle] = useState('');
+            const [imagePreview, setImagePreview] = useState(null);
+            
+            const [q1, setQ1] = useState(''); 
+            const [q2, setQ2] = useState(''); 
+            const [q3, setQ3] = useState(''); 
+            const [q4, setQ4] = useState(''); 
+            const [q5, setQ5] = useState(''); 
+
+            const [showConfirm, setShowConfirm] = useState(false);
+            const [showResetConfirm, setShowResetConfirm] = useState(false);
+            const [alertMessage, setAlertMessage] = useState('');
+            const [isSubmitted, setIsSubmitted] = useState(false);
+            const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+            
+            // 태블릿 전시 & TAG 피드백 관련 상태
+            const [shareMode, setShareMode] = useState('none'); // 'none' | 'card' | 'resume' | 'tag_form' | 'results'
+            const [feedbacks, setFeedbacks] = useState([]);
+            
+            // TAG 입력 폼 상태
+            const [evalAuthor, setEvalAuthor] = useState('');
+            const [evalT, setEvalT] = useState(''); // Tell (칭찬)
+            const [evalA, setEvalA] = useState(''); // Ask (질문)
+            const [evalG, setEvalG] = useState(''); // Give (조언)
+            const [evalSuccess, setEvalSuccess] = useState(false);
+
+            const pdfRef = useRef(null);
+            const previewContainerRef = useRef(null);
+            const [scale, setScale] = useState(0.5);
+
+            // Re-initialize icons on renders
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [isTeacherMode, selectedCompany, isSubmitted, imagePreview, shareMode, feedbacks, evalSuccess, showConfirm, showResetConfirm, alertMessage]);
+
+            // Calculate responsive scale for PDF preview
+            useEffect(() => {
+                if (isSubmitted && previewContainerRef.current) {
+                    const updateScale = () => {
+                        const containerWidth = previewContainerRef.current.offsetWidth - 48; // 여백 제외 실사이즈
+                        const newScale = Math.min(containerWidth / 1280, 1);
+                        setScale(newScale > 0 ? newScale : 0.5);
+                    };
+                    updateScale();
+                    window.addEventListener('resize', updateScale);
+                    return () => window.removeEventListener('resize', updateScale);
+                }
+            }, [isSubmitted]);
+
+            const handleImageChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setImagePreview(reader.result);
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const handleSubmitClick = (e) => {
+                e.preventDefault();
+                if (!name || !jobTitle || !imagePreview || !q1 || !q2 || !q3 || !q4 || !q5) {
+                    setAlertMessage('모든 항목을 작성하고 명함을 업로드해주세요.');
+                    return;
+                }
+                setShowConfirm(true);
+            };
+
+            const handleConfirmSubmit = () => {
+                setShowConfirm(false);
+                setIsSubmitted(true);
+                window.scrollTo(0, 0);
+            };
+
+            const handleResetClick = () => {
+                setShowResetConfirm(true);
+            };
+
+            const handleConfirmReset = () => {
+                setShowResetConfirm(false);
+                setIsSubmitted(false);
+                setSelectedCompany(null);
+                setName(''); setJobTitle(''); setImagePreview(null);
+                setQ1(''); setQ2(''); setQ3(''); setQ4(''); setQ5('');
+                setFeedbacks([]);
+                setShareMode('none');
+                window.scrollTo(0, 0);
+            };
+
+            // 작성 내용의 총 글자 수 계산하여 PDF 레이아웃 스타일 동적 적용
+            const totalTextLength = (q1 + q2 + q3 + q4 + q5).length;
+            
+            // 글자 수에 따른 동적 스타일 레벨
+            const getTextStyle = () => {
+                if (totalTextLength > 450) {
+                    return {
+                        padding: 'p-6',
+                        headerMb: 'mb-3 pb-2',
+                        headerText: 'text-2xl',
+                        spaceY: 'space-y-1',
+                        itemPb: 'pb-1.5',
+                        tagText: 'text-[10px] px-2 py-0.5',
+                        qText: 'text-xs',
+                        aText: 'text-[11px] leading-tight'
+                    };
+                } else if (totalTextLength > 250) {
+                    return {
+                        padding: 'p-8',
+                        headerMb: 'mb-4 pb-3',
+                        headerText: 'text-2xl',
+                        spaceY: 'space-y-2',
+                        itemPb: 'pb-2',
+                        tagText: 'text-xs px-2.5 py-0.5',
+                        qText: 'text-xs',
+                        aText: 'text-xs leading-snug'
+                    };
+                } else {
+                    return {
+                        padding: 'p-12',
+                        headerMb: 'mb-8 pb-4',
+                        headerText: 'text-3xl',
+                        spaceY: 'space-y-3',
+                        itemPb: 'pb-4',
+                        tagText: 'text-xs px-3 py-1',
+                        qText: 'text-md',
+                        aText: 'text-md leading-relaxed'
+                    };
+                }
+            };
+
+            const pdfStyle = getTextStyle();
+
+            // TAG 피드백 제출
+            const handleTagSubmit = (e) => {
+                e.preventDefault();
+                if (!evalAuthor.trim() || !evalT.trim() || !evalA.trim() || !evalG.trim()) {
+                    setAlertMessage('모든 평가 항목과 작성자 이름을 작성해주세요!');
+                    return;
+                }
+                const newFB = {
+                    id: Date.now(),
+                    author: evalAuthor,
+                    t: evalT,
+                    a: evalA,
+                    g: evalG,
+                    date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                };
+                setFeedbacks([newFB, ...feedbacks]);
+                setEvalT(''); setEvalA(''); setEvalG(''); setEvalAuthor('');
+                setEvalSuccess(true);
+            };
+
+            const generatePDF = async () => {
+                if(isGeneratingPDF) return;
+                setIsGeneratingPDF(true);
+                
+                let container = null;
+                try {
+                    const originalElement = pdfRef.current;
+                    const clone = originalElement.cloneNode(true);
+                    
+                    container = document.createElement('div');
+                    container.style.position = 'fixed';
+                    container.style.left = '0';
+                    container.style.top = '0';
+                    container.style.width = '1280px';
+                    container.style.height = '720px';
+                    container.style.zIndex = '-99999';
+                    container.style.overflow = 'hidden';
+                    container.style.margin = '0';
+                    container.style.padding = '0';
+                    container.style.backgroundColor = '#ffffff';
+
+                    clone.style.transform = 'none';
+                    clone.style.margin = '0';
+                    clone.style.left = '0';
+                    clone.style.top = '0';
+                    
+                    container.appendChild(clone);
+                    document.body.appendChild(container);
+
+                    const opt = {
+                        margin:       0,
+                        filename:     `${name}_${jobTitle}_입사지원서.pdf`,
+                        image:        { type: 'jpeg', quality: 1.0 },
+                        html2canvas:  { 
+                            scale: 2, 
+                            useCORS: true, 
+                            backgroundColor: '#ffffff',
+                            scrollX: 0,
+                            scrollY: 0,
+                            x: 0,
+                            y: 0,
+                            width: 1280, 
+                            height: 720,
+                            windowWidth: 1280,
+                            windowHeight: 720
+                        },
+                        jsPDF: { unit: 'pt', format: [960, 540], orientation: 'landscape' }
+                    };
+
+                    await html2pdf().set(opt).from(clone).save();
+                } catch (error) {
+                    console.error('PDF 생성 중 오류:', error);
+                    setAlertMessage('PDF 생성 중 오류가 발생했습니다.');
+                } finally {
+                    if (container && container.parentNode) {
+                        document.body.removeChild(container);
+                    }
+                    setIsGeneratingPDF(false);
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <Header isTeacherMode={isTeacherMode} setIsTeacherMode={setIsTeacherMode} />
+
+                    <main className="flex-grow">
+                        {isTeacherMode ? (
+                            <TeacherDashboard />
+                        ) : !selectedCompany ? (
+                            <CompanySelection onSelect={setSelectedCompany} />
+                        ) : !isSubmitted ? (
+                            <div className="max-w-5xl mx-auto py-10 px-4 animate-fade-in">
+                                <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div>
+                                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold mb-3 ${selectedCompany.color}`}>
+                                            <i data-lucide={selectedCompany.icon} className="w-4 h-4"></i>
+                                            {selectedCompany.name} 지원
+                                        </div>
+                                        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">입사 지원서 작성</h2>
+                                        <p className="text-slate-500 mt-2">미래를 향한 첫 걸음! 각 항목을 진솔하게 작성해주세요.</p>
+                                    </div>
+                                    <button onClick={() => setSelectedCompany(null)} className="text-sm px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-semibold transition-colors">
+                                        회사 다시 선택하기
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleSubmitClick} className="space-y-8">
+                                    {/* 정보 입력 폼 */}
+                                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                                        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                                            <i data-lucide="user" className="w-5 h-5 text-blue-500"></i> 지원자 기본 정보 및 명함
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="space-y-6">
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">성명 (이름)</label>
+                                                    <input 
+                                                        type="text" value={name} onChange={(e) => setName(e.target.value)}
+                                                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                                                        placeholder="예: 홍길동" required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2">희망 진로</label>
+                                                    <input 
+                                                        type="text" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)}
+                                                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                                                        placeholder="예: 인공지능 연구원" required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">디지털 명함 업로드 (16:9 비율)</label>
+                                                <div className="relative w-full aspect-video rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-400 bg-slate-50 flex items-center justify-center overflow-hidden transition-colors group cursor-pointer">
+                                                    {imagePreview ? (
+                                                        <img src={imagePreview} alt="명함 미리보기" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="text-center p-4">
+                                                            <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-3 text-slate-400 group-hover:text-blue-500 transition-colors">
+                                                                <i data-lucide="image-plus" className="w-6 h-6"></i>
+                                                            </div>
+                                                            <span className="text-sm font-bold text-slate-500 group-hover:text-blue-600">클릭하여 이미지 업로드</span>
+                                                        </div>
+                                                    )}
+                                                    <input 
+                                                        type="file" accept="image/*" onChange={handleImageChange}
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 포트폴리오 질문 */}
+                                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-8">
+                                        <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2 border-b border-slate-100 pb-4">
+                                            <i data-lucide="file-text" className="w-5 h-5 text-blue-500"></i> 미래 진로 탐구 에세이
+                                        </h3>
+                                        
+                                        {[
+                                            { 
+                                                id: 'q1', 
+                                                title: '1. 2045년, 내가 살아갈 미래 사회는 지금과 어떻게 달라져 있을까요?', 
+                                                sub: '→ 어떤 과학 기술이나 변화 때문에 그렇게 달라질지 함께 써 보세요.',
+                                                state: q1, 
+                                                setter: setQ1 
+                                            },
+                                            { 
+                                                id: 'q2', 
+                                                title: '2. 그런 미래 사회에는 어떤 새로운 문제나 필요가 생길까요?', 
+                                                sub: '→ 미래 사회의 변화 때문에 사람들이 겪게 될 어려움이나 새롭게 필요해지는 것을 생각해 보세요.',
+                                                state: q2, 
+                                                setter: setQ2 
+                                            },
+                                            { 
+                                                id: 'q3', 
+                                                title: '3. 그 문제를 해결하는 데 어떤 과학 기술이 도움을 줄 수 있나요?', 
+                                                sub: '→ 어떤 기술이 어떻게 도움을 줄 수 있는지 이유와 함께 써 보세요.',
+                                                state: q3, 
+                                                setter: setQ3 
+                                            },
+                                            { 
+                                                id: 'q4', 
+                                                title: '4. 2045년의 나는 어떤 직업을 가지고 있나요?', 
+                                                sub: '→ 그 직업이 지금과 비교하여 어떻게 달라져 있을지도 생각해 보세요.',
+                                                state: q4, 
+                                                setter: setQ4 
+                                            },
+                                            { 
+                                                id: 'q5', 
+                                                title: '5. 내가 꿈꾸는 직업에는 어떤 과학적 요소가 숨어있나요?', 
+                                                sub: '→ 내 직업에서 활용되는 과학 원리, 과학 지식, 과학 기술을 찾아보고, 실제로 어떻게 활용되는지 설명해 보세요.',
+                                                state: q5, 
+                                                setter: setQ5 
+                                            }
+                                        ].map((q) => (
+                                            <div key={q.id}>
+                                                <label className="block text-sm font-bold text-slate-800 mb-1">{q.title}</label>
+                                                <p className="text-xs text-slate-500 mb-3">{q.sub}</p>
+                                                <textarea 
+                                                    value={q.state} onChange={(e) => q.setter(e.target.value)}
+                                                    className="w-full h-28 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all leading-relaxed text-slate-700"
+                                                    placeholder="자세히 작성해주세요..." required
+                                                ></textarea>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <button 
+                                        type="submit"
+                                        className="w-full py-5 rounded-xl bg-slate-900 text-white text-lg font-bold hover:bg-slate-800 transition-colors shadow-lg flex items-center justify-center gap-2"
+                                    >
+                                        입사 지원서 최종 제출하기 <i data-lucide="arrow-right" className="w-5 h-5"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        ) : (
+                            <div className="max-w-6xl mx-auto py-12 px-4 animate-fade-in flex flex-col items-center">
+                                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-6">
+                                    <i data-lucide="check" className="w-8 h-8 font-bold"></i>
+                                </div>
+                                <h2 className="text-3xl font-extrabold text-slate-900 mb-2">지원이 완료되었습니다!</h2>
+                                <p className="text-slate-500 mb-8 text-center">
+                                    멋진 이력서가 완성되었습니다. 아래 버튼을 눌러 PDF로 다운로드하거나 태블릿으로 공유해보세요.
+                                </p>
+                                
+                                <div className="flex flex-wrap gap-4 mb-10 w-full justify-center">
+                                    <button 
+                                        onClick={handleResetClick}
+                                        className="px-5 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <i data-lucide="home" className="w-5 h-5"></i> 홈으로
+                                    </button>
+                                    <button 
+                                        onClick={() => setShareMode('card')}
+                                        className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors shadow-lg flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <i data-lucide="share-2" className="w-5 h-5"></i> 내 진로 공유하기
+                                    </button>
+                                    <button 
+                                        onClick={() => setShareMode('results')}
+                                        className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors shadow-lg flex items-center gap-2 relative cursor-pointer"
+                                    >
+                                        <i data-lucide="message-square" className="w-5 h-5"></i> 공유 결과 확인하기
+                                        {feedbacks.length > 0 && (
+                                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-black animate-bounce">
+                                                {feedbacks.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                    <button 
+                                        onClick={generatePDF}
+                                        disabled={isGeneratingPDF}
+                                        className={`px-6 py-3 rounded-xl bg-slate-900 text-white font-bold transition-colors shadow-lg flex items-center gap-2 ${isGeneratingPDF ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-800'}`}
+                                    >
+                                        <i data-lucide={isGeneratingPDF ? "loader-2" : "download"} className={`w-5 h-5 ${isGeneratingPDF ? 'animate-spin' : ''}`}></i> 
+                                        {isGeneratingPDF ? '다운로드 중...' : '내 이력서 다운로드'}
+                                    </button>
+                                </div>
+
+                                {/* PDF 미리보기 컨테이너 */}
+                                <div ref={previewContainerRef} className="pdf-preview-wrapper w-full relative flex justify-center items-center overflow-hidden">
+                                    <div className="pdf-scale-container shrink-0" style={{ width: `${1280 * scale}px`, height: `${720 * scale}px` }}>
+                                        
+                                        <div 
+                                            ref={pdfRef} 
+                                            id="pdf-capture-target" 
+                                            className="w-[1280px] h-[720px] bg-white flex overflow-hidden relative"
+                                            style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
+                                        >
+                                            
+                                            {/* 왼쪽 패널 */}
+                                            <div className="w-[45%] h-full bg-slate-900 text-white p-12 flex flex-col justify-between">
+                                                <div>
+                                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 text-slate-300 text-sm font-bold tracking-wider mb-6 border border-slate-700">
+                                                        {selectedCompany?.name} 지원자
+                                                    </div>
+                                                    <h1 className="text-5xl font-extrabold mb-3 tracking-tight">{name}</h1>
+                                                    <h2 className="text-2xl text-blue-400 font-semibold">{jobTitle}</h2>
+                                                </div>
+
+                                                <div className="w-full">
+                                                    <h3 className="text-sm font-bold text-slate-400 mb-4 tracking-widest uppercase border-b border-slate-700 pb-2">Business Card</h3>
+                                                    <div className="w-full aspect-video rounded-xl overflow-hidden bg-slate-800 shadow-xl border-4 border-slate-800">
+                                                        {imagePreview && <img src={imagePreview} className="w-full h-full object-cover" alt="명함" />}
+                                                    </div>
+                                                </div>
+
+                                                <div className="border-t border-slate-700 pt-6">
+                                                    <p className="text-slate-400 font-bold text-sm tracking-widest uppercase">Science & Career Portfolio</p>
+                                                    <p className="text-slate-500 text-xs mt-2">미래를 여는 마장 진로 프로젝트</p>
+                                                </div>
+                                            </div>
+
+                                            {/* 오른쪽 패널 */}
+                                            <div className={`w-[55%] h-full ${pdfStyle.padding} bg-white flex flex-col justify-between overflow-hidden`}>
+                                                <div className={`border-b-2 border-slate-900 ${pdfStyle.headerMb}`}>
+                                                    <h2 className={`${pdfStyle.headerText} font-black text-slate-900 tracking-tight uppercase`}>Interview Details</h2>
+                                                </div>
+                                                
+                                                <div className={`flex-grow flex flex-col justify-between ${pdfStyle.spaceY}`}>
+                                                    {[
+                                                        { q: "2045년, 내가 살아갈 미래 사회는 지금과 어떻게 달라져 있을까요?", a: q1, tag: "2045 미래사회" },
+                                                        { q: "그런 미래 사회에는 어떤 새로운 문제나 필요가 생길까요?", a: q2, tag: "새로운 문제/필요" },
+                                                        { q: "그 문제를 해결하는 데 어떤 과학 기술이 도움을 줄 수 있나요?", a: q3, tag: "과학기술 해결" },
+                                                        { q: "2045년의 나는 어떤 직업을 가지고 있나요?", a: q4, tag: "2045 나의 직업" },
+                                                        { q: "내가 꿈꾸는 직업에는 어떤 과학적 요소가 숨어있나요?", a: q5, tag: "직업 속 과학원리" }
+                                                    ].map((item, idx) => (
+                                                        <div key={idx} className={`${pdfStyle.itemPb} border-b border-slate-100 last:border-0 last:pb-0`}>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className={`${pdfStyle.tagText} font-bold text-white bg-slate-900 rounded-full whitespace-nowrap shrink-0`}>{item.tag}</span>
+                                                                <h4 className={`font-bold text-slate-800 ${pdfStyle.qText} truncate`}>{item.q}</h4>
+                                                            </div>
+                                                            <p className={`text-slate-600 ${pdfStyle.aText} whitespace-pre-wrap pl-1`}>{item.a}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        )}
+                    </main>
+
+                    {/* 태블릿 진로 공유 슬라이더 오버레이 (명함 -> 이력서 -> 피드백 모드) */}
+                    {['card', 'resume', 'tag_form'].includes(shareMode) && (
+                        <div className="fixed inset-0 z-[200] bg-slate-950 text-white overflow-hidden flex flex-col animate-fade-in">
+                            {/* 상단 프로그레스 및 제어 바 */}
+                            <div className="w-full bg-slate-900/90 backdrop-blur-md py-3 px-6 flex items-center justify-between border-b border-slate-800 shrink-0 z-20">
+                                <div className="flex items-center gap-2 md:gap-4">
+                                    <span className="text-xs md:text-sm font-bold text-slate-300 flex items-center gap-1.5">
+                                        <i data-lucide="share-2" className="w-4 h-4 text-blue-400"></i> 내 진로 공유
+                                    </span>
+                                    <div className="flex items-center gap-1 bg-slate-800/90 px-3 py-1 rounded-full text-xs font-semibold border border-slate-700">
+                                        <button 
+                                            onClick={() => setShareMode('card')} 
+                                            className={`px-2 py-0.5 rounded transition-colors ${shareMode === 'card' ? 'text-blue-400 font-extrabold bg-blue-500/10' : 'text-slate-400 hover:text-white'}`}
+                                        >
+                                            1. 명함
+                                        </button>
+                                        <i data-lucide="chevron-right" className="w-3 h-3 text-slate-600"></i>
+                                        <button 
+                                            onClick={() => setShareMode('resume')} 
+                                            className={`px-2 py-0.5 rounded transition-colors ${shareMode === 'resume' ? 'text-blue-400 font-extrabold bg-blue-500/10' : 'text-slate-400 hover:text-white'}`}
+                                        >
+                                            2. 이력서
+                                        </button>
+                                        <i data-lucide="chevron-right" className="w-3 h-3 text-slate-600"></i>
+                                        <button 
+                                            onClick={() => setShareMode('tag_form')} 
+                                            className={`px-2 py-0.5 rounded transition-colors ${shareMode === 'tag_form' ? 'text-blue-400 font-extrabold bg-blue-500/10' : 'text-slate-400 hover:text-white'}`}
+                                        >
+                                            3. 피드백
+                                        </button>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setShareMode('none')}
+                                    className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <i data-lucide="x" className="w-4 h-4"></i> 공유 종료
+                                </button>
+                            </div>
+
+                            {/* GPU 부드러운 슬라이딩 뷰포트 */}
+                            <div className="flex-1 w-full overflow-hidden relative">
+                                <div 
+                                    className="flex w-[300%] h-full transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
+                                    style={{ 
+                                        transform: `translate3d(${shareMode === 'card' ? '0%' : shareMode === 'resume' ? '-33.333333%' : '-66.666666%'}, 0, 0)` 
+                                    }}
+                                >
+                                    {/* Panel 1: 명함 보기 */}
+                                    <div 
+                                        onClick={() => setShareMode('resume')}
+                                        className="w-[33.333333%] h-full flex flex-col items-center justify-center p-0 cursor-pointer select-none bg-slate-950 relative"
+                                    >
+                                        <div className="absolute top-6 z-10 bg-black/60 backdrop-blur-md px-5 py-2.5 rounded-full text-white text-sm font-semibold flex items-center gap-2 border border-white/10 shadow-lg">
+                                            <i data-lucide="touch-pointer" className="w-4 h-4 animate-pulse text-blue-400"></i> 화면을 터치하여 이력서 보기 →
+                                        </div>
+                                        <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                                            {imagePreview ? (
+                                                <img src={imagePreview} className="w-full h-full object-contain" alt="꿈 명함" />
+                                            ) : (
+                                                <p className="text-slate-400 text-xl font-bold">등록된 명함이 없습니다.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Panel 2: 이력서 에세이 보기 */}
+                                    <div className="w-[33.333333%] h-full overflow-y-auto bg-slate-950 text-slate-100 p-6 md:p-12 flex flex-col items-center">
+                                        <div className="max-w-4xl w-full space-y-6 my-auto pt-4 pb-12">
+                                            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-2">
+                                                <div>
+                                                    <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">{selectedCompany?.name} 지원자</span>
+                                                    <h3 className="text-2xl md:text-3xl font-extrabold text-white">{name} <span className="text-lg font-normal text-slate-400">({jobTitle})</span></h3>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setShareMode('tag_form')}
+                                                    className="text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 px-5 py-2.5 rounded-full font-extrabold flex items-center gap-2 shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer text-white shrink-0"
+                                                >
+                                                    <span>피드백 작성하기</span> <i data-lucide="arrow-right" className="w-4 h-4"></i>
+                                                </button>
+                                            </div>
+
+                                            {[
+                                                { q: "1. 2045년, 내가 살아갈 미래 사회는 지금과 어떻게 달라져 있을까요?", a: q1, tag: "2045 미래사회", sub: "어떤 과학 기술이나 변화 때문에 그렇게 달라질지 함께 써 보세요." },
+                                                { q: "2. 그런 미래 사회에는 어떤 새로운 문제나 필요가 생길까요?", a: q2, tag: "새로운 문제/필요", sub: "미래 사회의 변화 때문에 사람들이 겪게 될 어려움이나 새롭게 필요해지는 것을 생각해 보세요." },
+                                                { q: "3. 그 문제를 해결하는 데 어떤 과학 기술이 도움을 줄 수 있나요?", a: q3, tag: "과학기술 해결", sub: "어떤 기술이 어떻게 도움을 줄 수 있는지 이유와 함께 써 보세요." },
+                                                { q: "4. 2045년의 나는 어떤 직업을 가지고 있나요?", a: q4, tag: "2045 나의 직업", sub: "그 직업이 지금과 비교하여 어떻게 달라져 있을지도 생각해 보세요." },
+                                                { q: "5. 내가 꿈꾸는 직업에는 어떤 과학적 요소가 숨어있나요?", a: q5, tag: "직업 속 과학원리", sub: "내 직업에서 활용되는 과학 원리, 과학 지식, 과학 기술을 찾아보고, 실제로 어떻게 활용되는지 설명해 보세요." }
+                                            ].map((item, idx) => (
+                                                <div key={idx} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <span className="text-xs font-black text-white bg-blue-600 px-3 py-1 rounded-full whitespace-nowrap">{item.tag}</span>
+                                                        <h4 className="font-bold text-white text-base md:text-lg">{item.q}</h4>
+                                                    </div>
+                                                    <p className="text-xs text-slate-400 mb-3 pl-1">→ {item.sub}</p>
+                                                    <p className="text-slate-300 text-sm md:text-base leading-relaxed whitespace-pre-wrap pl-1">{item.a}</p>
+                                                </div>
+                                            ))}
+
+                                            <div className="pt-6 text-center">
+                                                <button 
+                                                    onClick={() => setShareMode('tag_form')}
+                                                    className="w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-2xl font-black text-lg text-white shadow-2xl transition-all hover:scale-105 active:scale-95 inline-flex items-center justify-center gap-3 cursor-pointer"
+                                                >
+                                                    <i data-lucide="message-square-plus" className="w-6 h-6"></i>
+                                                    <span>피드백 남기러 가기 (TAG 평가)</span>
+                                                    <i data-lucide="arrow-right" className="w-6 h-6"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Panel 3: TAG 피드백 작성 Form */}
+                                    <div className="w-[33.333333%] h-full overflow-y-auto bg-slate-950 text-slate-900 p-6 md:p-12 flex flex-col items-center justify-center">
+                                        <div className="bg-white w-full max-w-3xl rounded-3xl p-6 md:p-10 shadow-2xl my-auto border border-slate-200">
+                                            <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-6">
+                                                <div>
+                                                    <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-3.5 py-1.5 rounded-full uppercase tracking-wider">TAG Evaluation</span>
+                                                    <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 mt-2">{name} 친구에게 피드백 남기기</h3>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setShareMode('resume')}
+                                                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                                                >
+                                                    <i data-lucide="arrow-left" className="w-4 h-4"></i> 이력서 보기
+                                                </button>
+                                            </div>
+
+                                            {evalSuccess ? (
+                                                <div className="text-center py-12">
+                                                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <i data-lucide="check-circle-2" className="w-10 h-10"></i>
+                                                    </div>
+                                                    <h4 className="text-2xl font-bold text-slate-900 mb-2">평가가 성공적으로 등록되었습니다!</h4>
+                                                    <p className="text-slate-500 mb-8 text-sm">친구에게 큰 도움이 될 거예요. 고마워요!</p>
+                                                    <div className="flex gap-4 justify-center">
+                                                        <button 
+                                                            onClick={() => { setEvalSuccess(false); setShareMode('card'); }}
+                                                            className="px-6 py-3.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-lg cursor-pointer"
+                                                        >
+                                                            <i data-lucide="rotate-ccw" className="w-4 h-4"></i> 처음 명함 보기
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => { setEvalSuccess(false); setShareMode('none'); }}
+                                                            className="px-6 py-3.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors shadow-lg cursor-pointer"
+                                                        >
+                                                            공유 종료
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <form onSubmit={handleTagSubmit} className="space-y-5">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">작성자 (내 이름)</label>
+                                                        <input 
+                                                            type="text" value={evalAuthor} onChange={(e) => setEvalAuthor(e.target.value)}
+                                                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 focus:border-indigo-500 outline-none text-sm font-semibold"
+                                                            placeholder="예: 김민준" required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-blue-600 uppercase mb-1.5 flex items-center gap-1.5">
+                                                            <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full inline-flex items-center justify-center font-black text-xs">T</span> Tell (칭찬할 점)
+                                                        </label>
+                                                        <input 
+                                                            type="text" value={evalT} onChange={(e) => setEvalT(e.target.value)}
+                                                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 focus:border-blue-500 outline-none text-sm"
+                                                            placeholder="멋진 점이나 잘 작성한 부분을 칭찬해주세요!" required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-amber-600 uppercase mb-1.5 flex items-center gap-1.5">
+                                                            <span className="w-5 h-5 bg-amber-100 text-amber-600 rounded-full inline-flex items-center justify-center font-black text-xs">A</span> Ask (궁금한 점)
+                                                        </label>
+                                                        <input 
+                                                            type="text" value={evalA} onChange={(e) => setEvalA(e.target.value)}
+                                                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 focus:border-amber-500 outline-none text-sm"
+                                                            placeholder="이 진로나 포트폴리오 내용 중 궁금한 점을 물어보세요!" required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-emerald-600 uppercase mb-1.5 flex items-center gap-1.5">
+                                                            <span className="w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full inline-flex items-center justify-center font-black text-xs">G</span> Give (알려주고 싶은 점 / 조언)
+                                                        </label>
+                                                        <input 
+                                                            type="text" value={evalG} onChange={(e) => setEvalG(e.target.value)}
+                                                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 focus:border-emerald-500 outline-none text-sm"
+                                                            placeholder="더 발전시킬 수 있는 아이디어나 도움이 될 정보를 공유해주세요!" required
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex gap-3 pt-4 border-t border-slate-200">
+                                                        <button 
+                                                            type="button" onClick={() => setShareMode('resume')}
+                                                            className="flex-1 py-3.5 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-colors flex items-center justify-center gap-1.5 text-sm cursor-pointer"
+                                                        >
+                                                            <i data-lucide="arrow-left" className="w-4 h-4"></i> 이력서 보기
+                                                        </button>
+                                                        <button 
+                                                            type="submit"
+                                                            className="flex-1 py-3.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors shadow-xl text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                                                        >
+                                                            <i data-lucide="send" className="w-4 h-4"></i> 평가 등록하기
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 공유 결과 확인하기 (TAG 피드백 모달) */}
+                    {shareMode === 'results' && (
+                        <div className="fixed inset-0 z-[200] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+                            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[85vh] flex flex-col p-8 animate-fade-in border border-slate-100">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center font-bold">
+                                            <i data-lucide="message-square" className="w-5 h-5"></i>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-slate-900">친구들이 남겨준 TAG 피드백</h3>
+                                            <p className="text-xs text-slate-500">총 {feedbacks.length}개의 응원이 도착했습니다.</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShareMode('none')}
+                                        className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors cursor-pointer"
+                                    >
+                                        <i data-lucide="x" className="w-6 h-6"></i>
+                                    </button>
+                                </div>
+
+                                <div className="flex-grow overflow-y-auto space-y-4 pr-1">
+                                    {feedbacks.length === 0 ? (
+                                        <div className="text-center py-16 text-slate-400">
+                                            <i data-lucide="inbox" className="w-12 h-12 mx-auto mb-3 opacity-50"></i>
+                                            <p className="font-semibold text-sm">아직 남겨진 피드백이 없습니다.</p>
+                                            <p className="text-xs text-slate-400 mt-1">'내 진로 공유하기'를 눌러 친구들에게 내 명함을 보여주세요!</p>
+                                        </div>
+                                    ) : (
+                                        feedbacks.map((fb) => (
+                                            <div key={fb.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                                                <div className="flex justify-between items-center border-b border-slate-200/60 pb-2">
+                                                    <span className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                                                        <i data-lucide="user" className="w-4 h-4 text-indigo-500"></i> {fb.author} 친구
+                                                    </span>
+                                                    <span className="text-xs text-slate-400">{fb.date}</span>
+                                                </div>
+                                                <div className="space-y-2 text-sm">
+                                                    <div className="flex gap-2 items-start">
+                                                        <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-black shrink-0 mt-0.5">T</span>
+                                                        <p className="text-slate-700"><span className="font-semibold text-blue-900">칭찬:</span> {fb.t}</p>
+                                                    </div>
+                                                    <div className="flex gap-2 items-start">
+                                                        <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-700 text-xs font-black shrink-0 mt-0.5">A</span>
+                                                        <p className="text-slate-700"><span className="font-semibold text-amber-900">질문:</span> {fb.a}</p>
+                                                    </div>
+                                                    <div className="flex gap-2 items-start">
+                                                        <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-xs font-black shrink-0 mt-0.5">G</span>
+                                                        <p className="text-slate-700"><span className="font-semibold text-emerald-900">조언:</span> {fb.g}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                <div className="mt-6 pt-4 border-t border-slate-100 text-right">
+                                    <button 
+                                        onClick={() => setShareMode('none')}
+                                        className="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-colors cursor-pointer"
+                                    >
+                                        닫기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <ConfirmModal 
+                        isOpen={showConfirm}
+                        message="제출 버튼을 누르면 수정할 수 없습니다. 제출하시겠습니까?"
+                        onConfirm={handleConfirmSubmit}
+                        onCancel={() => setShowConfirm(false)}
+                    />
+                    <ResetConfirmModal 
+                        isOpen={showResetConfirm}
+                        onConfirm={handleConfirmReset}
+                        onCancel={() => setShowResetConfirm(false)}
+                    />
+                    <AlertModal 
+                        isOpen={!!alertMessage}
+                        message={alertMessage}
+                        onClose={() => setAlertMessage('')}
+                    />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
